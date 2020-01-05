@@ -50,33 +50,29 @@ class Blinky(Elaboratable):
         m.d.sync += timer.eq(timer+1)
         m.d.comb += led.o.eq(timer[-1] & ~btn)
 
-        # debouncing?
-        """
-        btn1_db = Signal(20)
-        with m.If(btn1.i):
-            m.d.sync += btn1_db.eq(2**20)
-        with m.Else
-        with m.
-        """
-
         # 7 seg
         running = Signal(1)
+        """
         # naive btn
         last_btn1 = Signal(1)
         m.d.sync += last_btn1.eq(btn1.i)
         with m.If(btn1.i & ~last_btn1):
             m.d.sync += running.eq(~running)
-        # debouncing (doesnt work??)
         """
-        btn1_db = Signal(range(0, 0xfffff))
-        with m.If(btn1.i & (btn1_db == 0)):
-            m.d.sync += [
-                running.eq(~running),
-                btn1_db.eq(0xfffff),
-            ]
-        with m.If(btn1_db > 0):
-            m.d.sync += btn1_db.eq(btn1_db-1)
-        """
+        btn1_pipe1 = Signal(1)
+        btn1_pipe2 = Signal(1)
+        btn1_db = Signal(range(0, 0xffff))
+        m.d.sync += [
+            btn1_pipe1.eq(btn1.i),
+            btn1_pipe2.eq(btn1_pipe1),
+        ]
+        with m.If(btn1_pipe2):
+            m.d.sync += btn1_db.eq(0xffff)
+        with m.Else():
+            with m.If(btn1_db > 0):
+                m.d.sync += btn1_db.eq(btn1_db-1)
+        with m.If(btn1_pipe2 & (btn1_db == 0)):
+            m.d.sync += running.eq(~running)
 
         with m.If(running & (timer == 0)):
             with m.If(self.dd0.i_num == 9):
